@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>Celestial Archive — 88 Constellations</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Lato:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --gold: #ffd966;
+      --gold-dim: rgba(255,217,102,0.18);
+      --gold-glow: rgba(255,217,102,0.35);
+      --violet: #a78bfa;
+      --violet-dim: rgba(167,139,250,0.15);
+      --text-primary: #f0ede8;
+      --text-secondary: #cdc6b5;
+      --text-tertiary: #9e9480;
+      --card-bg: rgba(10,8,22,0.72);
+      --card-border: rgba(255,210,130,0.18);
+      --card-border-hover: rgba(255,210,130,0.5);
+      --modal-bg: rgba(5,4,14,0.97);
+    }
+
+    body {
+      background: radial-gradient(ellipse at 28% 18%, #060415, #000000);
+      font-family: 'Lato', sans-serif;
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── CANVAS STARFIELD ── */
+    #starfield-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── APP WRAPPER ── */
+    .app {
+      position: relative;
+      z-index: 10;
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 2.5rem 2rem 5rem;
+    }
+
+    /* ── HERO ── */
+    .hero {
+      text-align: center;
+      margin-bottom: 2.5rem;
+      padding-bottom: 2rem;
+      border-bottom: 0.5px solid rgba(255,210,130,0.2);
+    }
+    .hero-ornament {
+      font-size: 13px;
+      letter-spacing: 0.35em;
+      color: var(--gold);
+      opacity: 0.7;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+    .hero h1 {
+      font-family: 'Cinzel', serif;
+      font-size: clamp(26px, 5vw, 52px);
+      font-weight: 700;
+      letter-spacing: 0.22em;
+      background: linear-gradient(135deg, #fff8e7, #ffd966, #ffb347);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      cursor: default;
+      line-height: 1.1;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+    .hero-sub {
+      font-size: 13px;
+      color: var(--text-tertiary);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      font-weight: 300;
+    }
+    .hero-stats {
+      display: flex;
+      justify-content: center;
+      gap: 2.5rem;
+      margin-top: 1.2rem;
+      flex-wrap: wrap;
+    }
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+    }
+    .stat-num {
+      font-family: 'Cinzel', serif;
+      font-size: 22px;
+      font-weight: 600;
+      color: var(--gold);
+    }
+    .stat-lbl {
+      font-size: 10px;
+      color: var(--text-tertiary);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    /* ── CONTROLS ── */
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1.4rem;
+    }
+    .search-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(255,210,100,0.06);
+      border: 0.5px solid rgba(255,210,100,0.3);
+      border-radius: 40px;
+      padding: 9px 18px;
+      flex: 1;
+      min-width: 220px;
+      max-width: 420px;
+      backdrop-filter: blur(6px);
+      transition: border-color 0.2s;
+    }
+    .search-wrap:focus-within {
+      border-color: rgba(255,210,100,0.6);
+      box-shadow: 0 0 0 3px rgba(255,210,100,0.07);
+    }
+    .search-wrap input {
+      background: transparent;
+      border: none;
+      outline: none;
+      width: 100%;
+      font-size: 13px;
+      color: var(--text-primary);
+      font-family: 'Lato', sans-serif;
+      letter-spacing: 0.04em;
+    }
+    .search-wrap input::placeholder { color: rgba(205,198,181,0.4); }
+    .search-icon { font-size: 16px; color: var(--gold); opacity: 0.7; flex-shrink: 0; }
+
+    .ca-select {
+      background: rgba(255,210,100,0.06);
+      border: 0.5px solid rgba(255,210,100,0.25);
+      border-radius: 20px;
+      color: var(--gold);
+      font-family: 'Lato', sans-serif;
+      font-size: 12px;
+      padding: 9px 14px;
+      cursor: pointer;
+      letter-spacing: 0.05em;
+      outline: none;
+    }
+    .ca-select:focus { border-color: var(--gold); }
+
+    .pill-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      justify-content: center;
+      margin-bottom: 1.2rem;
+    }
+    .pill {
+      font-size: 11px;
+      padding: 6px 16px;
+      border-radius: 20px;
+      border: 0.5px solid rgba(255,210,100,0.2);
+      background: rgba(255,210,100,0.04);
+      color: var(--text-tertiary);
+      cursor: pointer;
+      font-family: 'Lato', sans-serif;
+      letter-spacing: 0.07em;
+      font-weight: 500;
+      transition: all 0.18s;
+      text-transform: uppercase;
+    }
+    .pill:hover { border-color: var(--gold); color: var(--gold); }
+    .pill.on {
+      background: rgba(255,210,100,0.14);
+      border-color: var(--gold);
+      color: var(--gold);
+    }
+
+    /* results bar */
+    .results-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.2rem;
+      padding: 0 2px;
+    }
+    .results-count { font-size: 11px; color: var(--text-tertiary); letter-spacing: 0.08em; text-transform: uppercase; }
+    .random-btn {
+      font-size: 11px;
+      padding: 5px 14px;
+      border-radius: 20px;
+      border: 0.5px solid rgba(167,139,250,0.35);
+      background: rgba(167,139,250,0.08);
+      color: var(--violet);
+      cursor: pointer;
+      font-family: 'Lato', sans-serif;
+      letter-spacing: 0.06em;
+      font-weight: 500;
+      transition: all 0.18s;
+      text-transform: uppercase;
+    }
+    .random-btn:hover { background: rgba(167,139,250,0.18); border-color: var(--violet); }
+
+    /* ── GRID ── */
+    .ca-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(295px, 1fr));
+      gap: 1rem;
+    }
+
+    /* ── CARD ── */
+    .ca-card {
+      background: var(--card-bg);
+      border: 0.5px solid var(--card-border);
+      border-radius: 18px;
+      padding: 1.1rem 1.3rem 1rem;
+      cursor: pointer;
+      transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+      position: relative;
+      overflow: hidden;
+      backdrop-filter: blur(8px);
+    }
+    .ca-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,210,100,0.4), transparent);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .ca-card:hover {
+      border-color: var(--card-border-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(255,210,100,0.08);
+    }
+    .ca-card:hover::before { opacity: 1; }
+
+    .fav-btn {
+      position: absolute;
+      top: 10px;
+      right: 12px;
+      background: none;
+      border: none;
+      font-size: 15px;
+      cursor: pointer;
+      opacity: 0.3;
+      transition: opacity 0.2s, transform 0.2s;
+      padding: 0;
+      z-index: 2;
+    }
+    .fav-btn:hover { opacity: 0.8; transform: scale(1.2); }
+    .fav-btn.active { opacity: 1; filter: drop-shadow(0 0 4px var(--gold)); }
+
+    .card-head {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 8px;
+      padding-right: 22px;
+    }
+    .card-names { flex: 1; min-width: 0; }
+    .card-latin {
+      font-family: 'Cinzel', serif;
+      font-size: 14px;
+      font-weight: 600;
+      color: #e8d5aa;
+      letter-spacing: 0.06em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .card-english {
+      font-size: 11px;
+      color: var(--text-tertiary);
+      margin-top: 2px;
+      letter-spacing: 0.04em;
+    }
+
+    .season-badge {
+      font-size: 10px;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-weight: 500;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .b-spring  { background: rgba(74,188,100,0.13); color: #6ee786; border: 0.5px solid rgba(74,188,100,0.2); }
+    .b-summer  { background: rgba(250,180,80,0.13);  color: #fbbf24; border: 0.5px solid rgba(250,180,80,0.2); }
+    .b-autumn  { background: rgba(230,100,60,0.13);  color: #fb923c; border: 0.5px solid rgba(230,100,60,0.2); }
+    .b-winter  { background: rgba(100,160,255,0.13); color: #93c5fd; border: 0.5px solid rgba(100,160,255,0.2); }
+    .b-all     { background: rgba(167,139,250,0.11); color: #a78bfa; border: 0.5px solid rgba(167,139,250,0.2); }
+
+    .card-desc {
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 1.7;
+      margin-bottom: 10px;
+      font-weight: 300;
+    }
+    .card-chips {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      border-top: 0.5px solid rgba(255,210,100,0.1);
+      padding-top: 9px;
+    }
+    .chip {
+      font-size: 10px;
+      padding: 3px 9px;
+      border-radius: 10px;
+      background: rgba(255,210,100,0.05);
+      color: var(--text-tertiary);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      letter-spacing: 0.04em;
+      border: 0.5px solid rgba(255,210,100,0.12);
+    }
+
+    /* empty state */
+    .ca-empty {
+      text-align: center;
+      padding: 4rem;
+      color: var(--text-tertiary);
+      font-size: 13px;
+      grid-column: 1 / -1;
+      letter-spacing: 0.08em;
+    }
+
+    /* ── PAGINATION ── */
+    .pagination {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 2rem;
+      flex-wrap: wrap;
+    }
+    .page-btn {
+      font-size: 12px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      border: 0.5px solid rgba(255,210,100,0.2);
+      background: rgba(255,210,100,0.04);
+      color: var(--text-secondary);
+      cursor: pointer;
+      font-family: 'Lato', sans-serif;
+      transition: all 0.18s;
+      letter-spacing: 0.05em;
+    }
+    .page-btn:hover { border-color: var(--gold); color: var(--gold); }
+    .page-btn.cur {
+      background: rgba(255,210,100,0.18);
+      border-color: var(--gold);
+      color: var(--gold);
+      font-weight: 600;
+    }
+
+    /* ── MODAL ── */
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.75);
+      backdrop-filter: blur(8px);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+    .modal-backdrop.open { display: flex; }
+
+    .modal {
+      background: var(--modal-bg);
+      border: 0.5px solid rgba(255,210,100,0.35);
+      border-radius: 24px;
+      padding: 2rem;
+      max-width: 540px;
+      width: 100%;
+      position: relative;
+      box-shadow: 0 0 60px rgba(255,210,100,0.08), 0 20px 60px rgba(0,0,0,0.6);
+      animation: modal-in 0.25s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+    }
+    @keyframes modal-in {
+      from { opacity: 0; transform: scale(0.93) translateY(12px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .modal-close {
+      position: absolute;
+      top: 14px;
+      right: 18px;
+      background: none;
+      border: none;
+      color: var(--text-tertiary);
+      font-size: 20px;
+      cursor: pointer;
+      transition: color 0.2s;
+      line-height: 1;
+    }
+    .modal-close:hover { color: var(--gold); }
+    .modal-latin {
+      font-family: 'Cinzel', serif;
+      font-size: 22px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #fff8e7, #ffd966);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      letter-spacing: 0.1em;
+      margin-bottom: 4px;
+    }
+    .modal-english {
+      font-size: 13px;
+      color: var(--text-tertiary);
+      letter-spacing: 0.07em;
+      margin-bottom: 1.2rem;
+    }
+    .modal-desc {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.8;
+      margin-bottom: 1.2rem;
+      font-weight: 300;
+    }
+    .modal-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 1.2rem;
+    }
+    .modal-stat {
+      background: rgba(255,210,100,0.06);
+      border: 0.5px solid rgba(255,210,100,0.15);
+      border-radius: 10px;
+      padding: 8px 12px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .modal-stat strong {
+      font-size: 10px;
+      color: var(--gold);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 500;
+    }
+    .modal-fav-btn {
+      width: 100%;
+      padding: 10px;
+      border-radius: 12px;
+      border: 0.5px solid rgba(255,210,100,0.3);
+      background: rgba(255,210,100,0.08);
+      color: var(--gold);
+      font-family: 'Lato', sans-serif;
+      font-size: 12px;
+      cursor: pointer;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      transition: all 0.18s;
+    }
+    .modal-fav-btn:hover { background: rgba(255,210,100,0.16); }
+    .modal-fav-btn.active { background: rgba(255,210,100,0.2); border-color: var(--gold); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 600px) {
+      .app { padding: 1.5rem 1rem 4rem; }
+      .hero-stats { gap: 1.5rem; }
+      .ca-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="starfield-canvas"></canvas>
+
+<div class="app">
+  <!-- HERO -->
+  <header class="hero">
+    <div class="hero-ornament">✦ &nbsp; The Night Sky Compendium &nbsp; ✦</div>
+    <h1>Celestial Archive</h1>
+    <div class="hero-sub">All 88 official IAU constellations</div>
+    <div class="hero-stats">
+      <div class="stat-item"><span class="stat-num">88</span><span class="stat-lbl">Constellations</span></div>
+      <div class="stat-item"><span class="stat-num" id="stat-fav">0</span><span class="stat-lbl">Favourites</span></div>
+      <div class="stat-item"><span class="stat-num" id="stat-showing">88</span><span class="stat-lbl">Showing</span></div>
+    </div>
+  </header>
+
+  <!-- CONTROLS -->
+  <div class="controls">
+    <div class="search-wrap">
+      <span class="search-icon">✦</span>
+      <input type="text" id="ca-search" placeholder="Search by name, star, description…" autocomplete="off">
+    </div>
+    <select class="ca-select" id="ca-sort">
+      <option value="alpha">Name A–Z</option>
+      <option value="area-desc">Largest first</option>
+      <option value="area-asc">Smallest first</option>
+    </select>
+  </div>
+
+  <div class="pill-row">
+    <button class="pill on" data-f="all">All seasons</button>
+    <button class="pill" data-f="spring">Spring</button>
+    <button class="pill" data-f="summer">Summer</button>
+    <button class="pill" data-f="autumn">Autumn</button>
+    <button class="pill" data-f="winter">Winter</button>
+    <button class="pill" data-f="north">Northern</button>
+    <button class="pill" data-f="south">Southern</button>
+    <button class="pill" data-f="favorites">⭐ Favourites</button>
+  </div>
+
+  <div class="results-bar">
+    <span class="results-count" id="results-count">88 of 88 constellations</span>
+    <button class="random-btn" id="random-btn">✦ Random spotlight</button>
+  </div>
+
+  <!-- GRID -->
+  <div class="ca-grid" id="ca-grid"></div>
+
+  <!-- PAGINATION -->
+  <div class="pagination" id="pagination"></div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-backdrop" id="modal-backdrop">
+  <div class="modal" role="dialog" aria-modal="true">
+    <button class="modal-close" id="modal-close" aria-label="Close">✕</button>
+    <div class="modal-latin" id="modal-latin"></div>
+    <div class="modal-english" id="modal-english"></div>
+    <p class="modal-desc" id="modal-desc"></p>
+    <div class="modal-stats" id="modal-stats"></div>
+    <button class="modal-fav-btn" id="modal-fav-btn">⭐ Add to Favourites</button>
+  </div>
+</div>
+
+<script>
+/* ══════════════════ DATA ══════════════════ */
+const DATA = [
+  {l:"Andromeda",e:"Princess of Ethiopia",b:"Alpheratz",a:722,s:"autumn",h:"N",d:"Named for the chained princess of Greek myth, Andromeda is home to the Andromeda Galaxy (M31) — our nearest large galactic neighbour, visible to the naked eye on dark nights."},
+  {l:"Antlia",e:"Air Pump",b:"α Antliae",a:239,s:"spring",h:"S",d:"A faint southern constellation introduced by Nicolas Louis de Lacaille in the 18th century. It represents the air pump he used in experiments, and contains no stars brighter than magnitude 4."},
+  {l:"Apus",e:"Bird of Paradise",b:"α Apodis",a:206,s:"winter",h:"S",d:"A small southern constellation representing the bird of paradise, introduced by Dutch navigators Keyser and de Houtman. It lies near the south celestial pole, invisible from northern latitudes."},
+  {l:"Aquarius",e:"Water Bearer",b:"Sadalsuud",a:980,s:"autumn",h:"E",d:"One of the oldest recognized constellations and a zodiac member, Aquarius depicts a figure pouring water. It contains the Helix Nebula — one of the closest planetary nebulae to Earth, often called the Eye of God."},
+  {l:"Aquila",e:"Eagle",b:"Altair",a:652,s:"summer",h:"E",d:"Aquila represents the eagle of Zeus. Its brightest star Altair rotates so fast it bulges noticeably at its equator and forms one vertex of the iconic Summer Triangle."},
+  {l:"Ara",e:"Altar",b:"α Arae",a:237,s:"summer",h:"S",d:"Ara represents the altar upon which the Olympian gods swore their oaths before battling the Titans. It sits in a spectacular, star-rich region of the Milky Way."},
+  {l:"Aries",e:"Ram",b:"Hamal",a:441,s:"autumn",h:"N",d:"The first sign of the zodiac, Aries represents the golden-fleeced ram sought by Jason and the Argonauts. Two millennia ago, the vernal equinox lay within its boundaries."},
+  {l:"Auriga",e:"Charioteer",b:"Capella",a:657,s:"winter",h:"N",d:"Auriga holds goat kids in his arms. Its star Capella is the sixth brightest in the sky — a close pair of giant stars orbiting each other every 104 days."},
+  {l:"Boötes",e:"Herdsman",b:"Arcturus",a:907,s:"spring",h:"N",d:"Boötes drives the Great Bear across the sky. Arcturus is the brightest star in the northern hemisphere — a warm orange giant just 37 light-years away."},
+  {l:"Caelum",e:"Chisel",b:"α Caeli",a:125,s:"winter",h:"S",d:"One of the faintest constellations in the sky, Caelum represents an engraving chisel introduced by Lacaille. It lies in a sparse region and contains no objects of particular note."},
+  {l:"Camelopardalis",e:"Giraffe",b:"β Camelopardalis",a:757,s:"all",h:"N",d:"A large but faint northern constellation whose name combines Greek words for camel and leopard — the ancient description of a giraffe's spotted, long-necked form."},
+  {l:"Cancer",e:"Crab",b:"Altarf",a:506,s:"spring",h:"N",d:"The faintest of the 12 zodiac constellations, Cancer contains the Beehive Cluster (M44) — one of the nearest open clusters, visible to the naked eye as a hazy patch."},
+  {l:"Canes Venatici",e:"Hunting Dogs",b:"Cor Caroli",a:465,s:"spring",h:"N",d:"The hounds held by Boötes are home to numerous bright galaxies including the Whirlpool Galaxy (M51) and the Sunflower Galaxy (M63), a treasure trove for observers."},
+  {l:"Canis Major",e:"Great Dog",b:"Sirius",a:380,s:"winter",h:"S",d:"Orion's larger hunting dog is dominated by Sirius — the brightest star in the entire night sky at magnitude −1.46, lying just 8.6 light-years from Earth."},
+  {l:"Canis Minor",e:"Little Dog",b:"Procyon",a:183,s:"winter",h:"N",d:"The smaller of Orion's two dogs. Procyon means 'before the dog' as it rises just before Sirius. It is the eighth-brightest star in the sky."},
+  {l:"Capricornus",e:"Sea Goat",b:"Deneb Algedi",a:414,s:"autumn",h:"S",d:"One of the oldest zodiac constellations, Capricornus represents a mythical creature that is half goat, half fish. Pan transformed himself into this form to escape the monster Typhon."},
+  {l:"Carina",e:"Keel",b:"Canopus",a:494,s:"winter",h:"S",d:"Once part of the vast ship Argo Navis, Carina represents the ship's keel. Its star Canopus is the second brightest in the night sky and used as a navigation star by spacecraft."},
+  {l:"Cassiopeia",e:"Queen of Ethiopia",b:"Schedar",a:598,s:"autumn",h:"N",d:"Cassiopeia's distinctive W (or M) shape makes it one of the most recognizable constellations. It was the site of Tycho Brahe's famous supernova observation in 1572."},
+  {l:"Centaurus",e:"Centaur",b:"α Centauri",a:1060,s:"spring",h:"S",d:"Centaurus contains Alpha Centauri — the closest star system to our Sun. Its component Proxima Centauri holds the record as our nearest stellar neighbour at 4.24 light-years."},
+  {l:"Cepheus",e:"King of Ethiopia",b:"Alderamin",a:588,s:"autumn",h:"N",d:"The king and father of Andromeda. Cepheus contains the Garnet Star (μ Cephei), one of the largest and most luminous red supergiant stars known in the Milky Way."},
+  {l:"Cetus",e:"Sea Monster",b:"Menkar",a:1231,s:"autumn",h:"S",d:"One of the largest constellations, Cetus was the sea monster sent to devour Andromeda. It contains Mira — the first periodic variable star discovered, pulsing over a 331-day cycle."},
+  {l:"Chamaeleon",e:"Chameleon",b:"α Cha",a:132,s:"all",h:"S",d:"A small southern constellation introduced by Dutch navigators. It lies near the south celestial pole and contains the Chamaeleon complex, an active star-forming molecular cloud."},
+  {l:"Circinus",e:"Compasses",b:"α Cir",a:93,s:"spring",h:"S",d:"The second smallest constellation in the sky. Lacaille's draughtsman's compasses harbours the Circinus Galaxy — one of the closest Seyfert galaxies to our own Milky Way."},
+  {l:"Columba",e:"Dove",b:"Phact",a:270,s:"winter",h:"S",d:"Representing the dove that Noah sent from the ark, or the dove that guided the Argonauts through the Clashing Rocks. Columba contains the runaway star μ Columbae, ejected from Orion."},
+  {l:"Coma Berenices",e:"Berenice's Hair",b:"β Com",a:386,s:"spring",h:"N",d:"Named for Queen Berenice II of Egypt who sacrificed her hair for her husband's safe return. It contains the Coma Cluster — one of the densest known galaxy clusters."},
+  {l:"Corona Australis",e:"Southern Crown",b:"α CrA",a:128,s:"summer",h:"S",d:"A small but distinctive constellation near the galactic center. It contains a prominent star-forming region — the Corona Australis Nebula — one of the nearest stellar nurseries."},
+  {l:"Corona Borealis",e:"Northern Crown",b:"Alphecca",a:179,s:"summer",h:"N",d:"A small, compact constellation forming a distinctive arc. The crown was given by Dionysus to Ariadne. It is home to T CrB — a recurrent nova expected to brighten dramatically."},
+  {l:"Corvus",e:"Crow",b:"Gienah",a:184,s:"spring",h:"S",d:"The sacred crow of Apollo, punished for its tardiness. Its four main stars form a distinctive quadrilateral. It contains the Antennae Galaxies — a famous pair of colliding galaxies."},
+  {l:"Crater",e:"Cup",b:"δ Crateris",a:282,s:"spring",h:"S",d:"Representing the cup of Apollo, Crater is a faint constellation sitting on the back of Hydra the water serpent. It has no objects of particular brightness or note."},
+  {l:"Crux",e:"Southern Cross",b:"Acrux",a:68,s:"autumn",h:"S",d:"The smallest constellation by area, yet one of the most famous. The Southern Cross features on multiple national flags and has guided navigators in the southern hemisphere for centuries."},
+  {l:"Cygnus",e:"Swan",b:"Deneb",a:804,s:"summer",h:"N",d:"Cygnus represents Zeus in the form of a swan. Its star Deneb is one of the most luminous stars known. The constellation lies along the Milky Way, rich in nebulae and star clusters."},
+  {l:"Delphinus",e:"Dolphin",b:"Rotanev",a:189,s:"summer",h:"N",d:"A small but distinctive constellation whose main stars form a tiny diamond nicknamed 'Job's Coffin'. The dolphin was said to have helped Poseidon find the sea nymph Amphitrite."},
+  {l:"Dorado",e:"Swordfish",b:"α Dor",a:179,s:"winter",h:"S",d:"A southern constellation introduced by Dutch navigators. It contains most of the Large Magellanic Cloud — a satellite galaxy of the Milky Way — and the magnificent Tarantula Nebula."},
+  {l:"Draco",e:"Dragon",b:"Eltanin",a:1083,s:"summer",h:"N",d:"Draco winds around the north celestial pole. Its star Thuban served as the pole star 4,000 years ago when the Egyptians built the pyramids. It contains the Cat's Eye Nebula."},
+  {l:"Equuleus",e:"Little Horse",b:"Kitalpha",a:72,s:"summer",h:"N",d:"The second smallest constellation in the sky. The little foal is sometimes identified as Celeris, the brother of Pegasus. It contains no bright stars or notable deep-sky objects."},
+  {l:"Eridanus",e:"River",b:"Achernar",a:1138,s:"winter",h:"S",d:"The second largest constellation, Eridanus winds south from Orion's foot to the bright star Achernar — one of the most oblate stars known, spinning so fast it bulges dramatically at its equator."},
+  {l:"Fornax",e:"Furnace",b:"α For",a:398,s:"winter",h:"S",d:"Lacaille's chemical furnace contains the Fornax Cluster of galaxies and the famous Hubble Ultra Deep Field region, revealing thousands of distant galaxies in a tiny patch of sky."},
+  {l:"Gemini",e:"Twins",b:"Pollux",a:514,s:"winter",h:"N",d:"Gemini represents the twin heroes Castor and Pollux. Pollux is the closest giant star to the Sun and hosts a confirmed exoplanet. Castor is actually a sextuple star system."},
+  {l:"Grus",e:"Crane",b:"Alnair",a:366,s:"autumn",h:"S",d:"Introduced by Dutch navigators representing a crane. It contains the Grus Quartet — four interacting galaxies creating a beautiful chain of cosmic collisions visible through telescopes."},
+  {l:"Hercules",e:"Hercules",b:"Kornephoros",a:1225,s:"summer",h:"N",d:"The fifth largest constellation, named for the greatest of Greek heroes. It contains M13 — the Great Globular Cluster of Hercules — home to hundreds of thousands of ancient stars."},
+  {l:"Horologium",e:"Clock",b:"α Hor",a:249,s:"winter",h:"S",d:"Lacaille's pendulum clock is a faint constellation but contains the Horologium Supercluster — one of the largest known structures in the universe, containing thousands of galaxy groups."},
+  {l:"Hydra",e:"Water Serpent",b:"Alphard",a:1303,s:"spring",h:"S",d:"The largest of the 88 constellations by area, Hydra represents the many-headed water snake slain by Hercules. Its brightest star Alphard — the Solitary One — shines with no bright neighbours."},
+  {l:"Hydrus",e:"Lesser Snake",b:"β Hyi",a:243,s:"all",h:"S",d:"A southern constellation introduced by Dutch navigators, Hydrus lies between the Magellanic Clouds. It is not to be confused with the much larger Hydra in the northern sky."},
+  {l:"Indus",e:"Indian",b:"α Ind",a:294,s:"autumn",h:"S",d:"Introduced by Dutch navigators to represent an indigenous person of the Americas, Asia, or Africa. It contains ε Indi — one of the nearest Sun-like stars at just 11.8 light-years."},
+  {l:"Lacerta",e:"Lizard",b:"α Lac",a:201,s:"autumn",h:"N",d:"A small northern constellation introduced by Hevelius, Lacerta is home to BL Lacertae — the prototype of a class of violently variable active galactic nuclei called BL Lac objects."},
+  {l:"Leo",e:"Lion",b:"Regulus",a:947,s:"spring",h:"N",d:"One of the oldest identified constellations, Leo represents the Nemean lion slain by Hercules. Its star Regulus lies almost exactly on the ecliptic. It contains many bright galaxies."},
+  {l:"Leo Minor",e:"Little Lion",b:"Praecipua",a:232,s:"spring",h:"N",d:"A small northern constellation created by Hevelius. It represents a small lion cub between the Great Bear and the Lion. It contains no bright stars or notable deep-sky objects."},
+  {l:"Lepus",e:"Hare",b:"Arneb",a:290,s:"winter",h:"S",d:"The hare crouching beneath Orion's feet, hunted by his dogs Canis Major and Canis Minor. It contains Hind's Crimson Star — one of the reddest stars visible to the naked eye."},
+  {l:"Libra",e:"Scales",b:"Zubeneschamali",a:538,s:"summer",h:"S",d:"The only zodiac constellation representing an inanimate object, Libra's scales symbolize justice. Zubeneschamali is one of the few stars with a visibly greenish tint to the naked eye."},
+  {l:"Lupus",e:"Wolf",b:"α Lupi",a:334,s:"spring",h:"S",d:"An ancient constellation representing a wolf. In 1006 CE, one of the brightest stellar events in recorded history — Supernova SN 1006 — blazed in Lupus, briefly outshining the Moon."},
+  {l:"Lynx",e:"Lynx",b:"α Lyncis",a:545,s:"winter",h:"N",d:"Introduced by Hevelius, who named it Lynx because only the sharp-eyed (like a lynx) could see its faint stars. It is a large but sparsely populated constellation with no bright stars."},
+  {l:"Lyra",e:"Harp",b:"Vega",a:286,s:"summer",h:"N",d:"Lyra represents the harp of Orpheus, said to have charmed all living things. Vega forms one vertex of the Summer Triangle. It also contains the Ring Nebula (M57) — a famous planetary nebula."},
+  {l:"Mensa",e:"Table Mountain",b:"α Mensae",a:153,s:"all",h:"S",d:"Named after Table Mountain in South Africa, Mensa is the only constellation named after a terrestrial feature. Part of the Large Magellanic Cloud extends into its boundaries."},
+  {l:"Microscopium",e:"Microscope",b:"γ Microscopii",a:210,s:"autumn",h:"S",d:"One of Lacaille's scientific instrument constellations. Faint and unremarkable on its own, it sits in an otherwise sparse region of the southern sky."},
+  {l:"Monoceros",e:"Unicorn",b:"α Monocerotis",a:482,s:"winter",h:"S",d:"Lying in the rich Milky Way between Orion's two dogs, Monoceros contains the spectacular Rosette Nebula, the Christmas Tree Cluster, and the Cone Nebula — all within a small region of sky."},
+  {l:"Musca",e:"Fly",b:"α Muscae",a:138,s:"autumn",h:"S",d:"A small southern constellation introduced by Dutch navigators. The Coalsack Nebula — a prominent dark nebula visible to the naked eye near the Southern Cross — partially overlaps Musca."},
+  {l:"Norma",e:"Carpenter's Square",b:"γ² Normae",a:165,s:"summer",h:"S",d:"Lacaille's set square. Norma lies in the Milky Way near the galactic center and contains the Norma Cluster — a rich galaxy cluster and part of the Great Attractor region."},
+  {l:"Octans",e:"Octant",b:"ν Octantis",a:291,s:"all",h:"S",d:"Octans contains the south celestial pole, making it the southern equivalent of Ursa Minor. Unlike Polaris in the north, there is no bright star near the southern pole within this constellation."},
+  {l:"Ophiuchus",e:"Serpent Bearer",b:"Rasalhague",a:948,s:"summer",h:"S",d:"Often called the 13th zodiac sign since the ecliptic passes through it. Ophiuchus contains more globular clusters than any other constellation, and is near the galactic center."},
+  {l:"Orion",e:"Hunter",b:"Rigel",a:594,s:"winter",h:"E",d:"Perhaps the most famous of all constellations, Orion the Hunter is recognized across every culture. The Great Orion Nebula (M42) is the nearest and brightest stellar nursery in the sky."},
+  {l:"Pavo",e:"Peacock",b:"Peacock",a:378,s:"autumn",h:"S",d:"A southern constellation representing a peacock, introduced by Dutch navigators. Its brightest star is simply named Peacock. It contains the globular cluster NGC 6752."},
+  {l:"Pegasus",e:"Winged Horse",b:"Enif",a:1121,s:"autumn",h:"N",d:"The Great Square of Pegasus dominates the autumn sky. The constellation was the site of the first confirmed exoplanet discovery around a Sun-like star — 51 Pegasi b in 1995."},
+  {l:"Perseus",e:"Hero Perseus",b:"Mirfak",a:615,s:"autumn",h:"N",d:"The hero who slew Medusa. The Perseid meteor shower radiates from Perseus each August. Algol — the Demon Star — is a famous eclipsing binary that blinks every 2.87 days."},
+  {l:"Phoenix",e:"Phoenix",b:"Ankaa",a:469,s:"autumn",h:"S",d:"Introduced by Dutch navigators representing the mythological firebird. It contains the Phoenix Cluster, whose central black hole is one of the most powerful in the known universe."},
+  {l:"Pictor",e:"Painter's Easel",b:"α Pictoris",a:247,s:"winter",h:"S",d:"Lacaille's constellation of the painter's easel. Beta Pictoris hosts a spectacular debris disc and directly imaged gas giant, making it one of the most studied young stellar systems."},
+  {l:"Pisces",e:"Fishes",b:"η Piscium",a:889,s:"autumn",h:"N",d:"One of the oldest zodiac constellations. The vernal equinox — where the Sun crosses the celestial equator heading north — currently lies within Pisces, not Aries as it did 2,000 years ago."},
+  {l:"Piscis Austrinus",e:"Southern Fish",b:"Fomalhaut",a:245,s:"autumn",h:"S",d:"Fomalhaut is one of the few stars known to host a prominent dust ring and a directly imaged exoplanet candidate. It is the southernmost of the first-magnitude stars visible from mid-latitudes."},
+  {l:"Puppis",e:"Stern",b:"Naos",a:673,s:"winter",h:"S",d:"Once part of the great ship Argo Navis, Puppis represents the stern. Its star Naos (ζ Puppis) is one of the hottest and most luminous naked-eye stars — a rare O-type supergiant."},
+  {l:"Pyxis",e:"Mariner's Compass",b:"α Pyxidis",a:221,s:"spring",h:"S",d:"Originally considered the compass of the Argo. It contains T Pyxidis — a recurrent nova that has erupted six times since 1890, with the most recent outburst in 2011."},
+  {l:"Reticulum",e:"Reticle",b:"α Reticuli",a:114,s:"winter",h:"S",d:"Representing the eyepiece crosshairs (reticle) of a telescope, introduced by Lacaille. Zeta Reticuli is famous in popular culture for alleged UFO connections. It hosts a debris disc."},
+  {l:"Sagitta",e:"Arrow",b:"γ Sagittae",a:80,s:"summer",h:"N",d:"One of the smallest constellations in the sky, Sagitta nonetheless forms a recognizable arrow shape. It contains M71, a loose globular cluster, and the planetary nebula WeSb 4-7."},
+  {l:"Sagittarius",e:"Archer",b:"Kaus Australis",a:867,s:"summer",h:"S",d:"The center of our Milky Way galaxy lies within Sagittarius, making it the richest constellation for nebulae and clusters. It contains more Messier objects than any other constellation."},
+  {l:"Scorpius",e:"Scorpion",b:"Antares",a:497,s:"summer",h:"S",d:"One of the most striking constellations, with a curved tail of bright stars. Antares is a red supergiant so enormous that if placed at the center of our Solar System, it would engulf Mars."},
+  {l:"Sculptor",e:"Sculptor's Workshop",b:"α Sculptoris",a:475,s:"autumn",h:"S",d:"Lacaille's sculptor's studio contains the Sculptor Galaxy (NGC 253) — one of the brightest spiral galaxies visible from Earth and a favourite target for amateur observers."},
+  {l:"Scutum",e:"Shield",b:"α Scuti",a:109,s:"summer",h:"S",d:"One of the smallest constellations, Scutum lies in a rich Milky Way field. It contains the Wild Duck Cluster (M11) — one of the richest and most compact open clusters known."},
+  {l:"Serpens",e:"Serpent",b:"Unukalhai",a:637,s:"summer",h:"E",d:"The only constellation split into two parts: Serpens Caput (head) and Serpens Cauda (tail). Its tail section contains the Eagle Nebula (M16) with the famous Pillars of Creation."},
+  {l:"Sextans",e:"Sextant",b:"α Sextantis",a:314,s:"spring",h:"E",d:"Introduced by Hevelius to commemorate his sextant destroyed in a fire. It contains Sextans A and Sextans B — dwarf irregular galaxies on the fringes of the Local Group."},
+  {l:"Taurus",e:"Bull",b:"Aldebaran",a:797,s:"winter",h:"N",d:"One of the oldest identified constellations, Taurus contains the Pleiades (M45) and Hyades open clusters, and the Crab Nebula (M1) — remnant of a supernova observed by astronomers in 1054 CE."},
+  {l:"Telescopium",e:"Telescope",b:"α Telescopii",a:252,s:"summer",h:"S",d:"Lacaille's constellation of the refracting telescope. It contains PSR B1937+21 — the first millisecond pulsar ever discovered, spinning an extraordinary 641 times per second."},
+  {l:"Triangulum",e:"Triangle",b:"β Trianguli",a:132,s:"autumn",h:"N",d:"One of the ancient constellations. It contains the Triangulum Galaxy (M33) — the third-largest member of the Local Group and the most distant object regularly visible to the naked eye."},
+  {l:"Triangulum Australe",e:"Southern Triangle",b:"Atria",a:110,s:"summer",h:"S",d:"Despite being one of the smaller southern constellations, Triangulum Australe is easy to identify due to its three relatively bright stars forming a clear triangle, introduced by Dutch navigators."},
+  {l:"Tucana",e:"Toucan",b:"α Tucanae",a:295,s:"all",h:"S",d:"Tucana is notable for containing both the Small Magellanic Cloud and the globular cluster 47 Tucanae — the second brightest globular in the sky and a premier laboratory for stellar evolution."},
+  {l:"Ursa Major",e:"Great Bear",b:"Alioth",a:1280,s:"spring",h:"N",d:"The third largest constellation, Ursa Major contains the Big Dipper asterism — one of the most universally recognized star patterns, used for navigation across virtually every human culture."},
+  {l:"Ursa Minor",e:"Little Bear",b:"Polaris",a:256,s:"all",h:"N",d:"Home to Polaris — the North Star. For centuries, Polaris has served as the north celestial pole marker, guiding navigators across oceans and continents. It currently sits within 0.7° of true north."},
+  {l:"Vela",e:"Sails",b:"γ Velorum",a:500,s:"spring",h:"S",d:"Once part of the great ship Argo Navis, Vela represents the sails. It contains the Vela Supernova Remnant — the expanding shell of a stellar explosion 11,000 years ago — and the hot runaway star γ Velorum."},
+  {l:"Virgo",e:"Virgin",b:"Spica",a:1294,s:"spring",h:"S",d:"The largest of the zodiac constellations, Virgo contains the Virgo Cluster of over 1,300 galaxies. Spica helped Hipparchus discover the precession of the equinoxes in 127 BCE."},
+  {l:"Volans",e:"Flying Fish",b:"β Volantis",a:141,s:"winter",h:"S",d:"A small southern constellation representing a flying fish observed by Dutch navigators in tropical seas. It lies near the Large Magellanic Cloud. Flying fish genuinely glide above water."},
+  {l:"Vulpecula",e:"Fox",b:"α Vulpeculae",a:268,s:"summer",h:"N",d:"Originally a fox carrying a goose, introduced by Hevelius. It contains the Dumbbell Nebula (M27) — the very first planetary nebula ever discovered, and still one of the finest examples in the sky."}
+];
+
+const SL = {spring:'b-spring',summer:'b-summer',autumn:'b-autumn',winter:'b-winter',all:'b-all'};
+const SN = {spring:'Spring',summer:'Summer',autumn:'Autumn',winter:'Winter',all:'Year-round'};
+
+/* ══════════════════ STATE ══════════════════ */
+let favorites = [];
+try { favorites = JSON.parse(localStorage.getItem('ca_favs') || '[]'); } catch(e){}
+let filter = 'all', sort = 'alpha', query = '', page = 1;
+const PER_PAGE = 24;
+
+function saveFavs() {
+  try { localStorage.setItem('ca_favs', JSON.stringify(favorites)); } catch(e){}
+  document.getElementById('stat-fav').textContent = favorites.length;
+}
+
+/* ══════════════════ FILTER + SORT ══════════════════ */
+function getFiltered() {
+  let d = DATA.slice();
+  if (query.trim()) {
+    const q = query.toLowerCase();
+    d = d.filter(c => c.l.toLowerCase().includes(q) || c.e.toLowerCase().includes(q) ||
+      c.b.toLowerCase().includes(q) || c.d.toLowerCase().includes(q));
+  }
+  if (filter === 'favorites') d = d.filter(c => favorites.includes(c.l));
+  else if (filter === 'north') d = d.filter(c => c.h === 'N');
+  else if (filter === 'south') d = d.filter(c => c.h === 'S');
+  else if (filter !== 'all') d = d.filter(c => c.s === filter);
+
+  if (sort === 'alpha') d.sort((a,b) => a.l.localeCompare(b.l));
+  else if (sort === 'area-desc') d.sort((a,b) => b.a - a.a);
+  else d.sort((a,b) => a.a - b.a);
+  return d;
+}
+
+/* ══════════════════ RENDER ══════════════════ */
+function render() {
+  const all = getFiltered();
+  const totalPages = Math.max(1, Math.ceil(all.length / PER_PAGE));
+  if (page > totalPages) page = 1;
+  const list = all.slice((page-1)*PER_PAGE, page*PER_PAGE);
+
+  document.getElementById('results-count').textContent = all.length + ' of ' + DATA.length + ' constellations';
+  document.getElementById('stat-showing').textContent = all.length;
+
+  const grid = document.getElementById('ca-grid');
+  if (!list.length) {
+    grid.innerHTML = '<div class="ca-empty">No constellations match your search.</div>';
+    document.getElementById('pagination').innerHTML = '';
+    return;
+  }
+
+  grid.innerHTML = list.map(c => {
+    const hemi = c.h === 'N' ? 'Northern' : c.h === 'S' ? 'Southern' : 'Both';
+    const isFav = favorites.includes(c.l);
+    return `<div class="ca-card" data-latin="${c.l}">
+      <button class="fav-btn ${isFav ? 'active' : ''}" data-fav="${c.l}" title="Favourite" aria-label="Toggle favourite">⭐</button>
+      <div class="card-head">
+        <div class="card-names">
+          <div class="card-latin">${c.l}</div>
+          <div class="card-english">${c.e}</div>
+        </div>
+        <span class="season-badge ${SL[c.s]}">${SN[c.s]}</span>
+      </div>
+      <p class="card-desc">${c.d}</p>
+      <div class="card-chips">
+        <span class="chip">✦ ${c.b}</span>
+        <span class="chip">⬟ ${c.a} sq°</span>
+        <span class="chip">🌐 ${hemi}</span>
+      </div>
+    </div>`;
+  }).join('');
+
+  // card click → modal
+  grid.querySelectorAll('.ca-card').forEach(card => {
+    card.addEventListener('click', e => {
+      if (e.target.classList.contains('fav-btn')) return;
+      openModal(card.dataset.latin);
+    });
+  });
+  // fav toggle
+  grid.querySelectorAll('.fav-btn').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const lat = btn.dataset.fav;
+      if (favorites.includes(lat)) favorites = favorites.filter(f => f !== lat);
+      else favorites.push(lat);
+      saveFavs();
+      render();
+    });
+  });
+
+  renderPagination(totalPages);
+}
+
+function renderPagination(total) {
+  const pag = document.getElementById('pagination');
+  if (total <= 1) { pag.innerHTML = ''; return; }
+  let html = `<button class="page-btn" data-p="prev">◀</button>`;
+  const start = Math.max(1, page - 3);
+  const end   = Math.min(total, page + 3);
+  if (start > 1) html += `<button class="page-btn" data-p="1">1</button><span style="color:var(--text-tertiary);padding:0 4px">…</span>`;
+  for (let i = start; i <= end; i++)
+    html += `<button class="page-btn ${i===page?'cur':''}" data-p="${i}">${i}</button>`;
+  if (end < total) html += `<span style="color:var(--text-tertiary);padding:0 4px">…</span><button class="page-btn" data-p="${total}">${total}</button>`;
+  html += `<button class="page-btn" data-p="next">▶</button>`;
+  pag.innerHTML = html;
+  pag.querySelectorAll('.page-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const p = btn.dataset.p;
+      const total2 = Math.ceil(getFiltered().length / PER_PAGE);
+      if (p === 'prev') page = Math.max(1, page - 1);
+      else if (p === 'next') page = Math.min(total2, page + 1);
+      else page = parseInt(p);
+      render();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  });
+}
+
+/* ══════════════════ MODAL ══════════════════ */
+function openModal(latin) {
+  const c = DATA.find(x => x.l === latin);
+  if (!c) return;
+  const hemi = c.h === 'N' ? 'Northern' : c.h === 'S' ? 'Southern' : 'Both hemispheres';
+  document.getElementById('modal-latin').textContent = c.l;
+  document.getElementById('modal-english').textContent = c.e;
+  document.getElementById('modal-desc').textContent = c.d;
+  document.getElementById('modal-stats').innerHTML = `
+    <div class="modal-stat"><strong>Brightest Star</strong>${c.b}</div>
+    <div class="modal-stat"><strong>Area</strong>${c.a} sq°</div>
+    <div class="modal-stat"><strong>Best Season</strong>${SN[c.s]}</div>
+    <div class="modal-stat"><strong>Hemisphere</strong>${hemi}</div>`;
+  const favBtn = document.getElementById('modal-fav-btn');
+  const update = () => {
+    const fav = favorites.includes(c.l);
+    favBtn.textContent = fav ? '⭐ Remove from Favourites' : '⭐ Add to Favourites';
+    favBtn.classList.toggle('active', fav);
+  };
+  update();
+  favBtn.onclick = () => {
+    if (favorites.includes(c.l)) favorites = favorites.filter(f => f !== c.l);
+    else favorites.push(c.l);
+    saveFavs(); update(); render();
+  };
+  document.getElementById('modal-backdrop').classList.add('open');
+}
+
+document.getElementById('modal-close').addEventListener('click', () => {
+  document.getElementById('modal-backdrop').classList.remove('open');
+});
+document.getElementById('modal-backdrop').addEventListener('click', e => {
+  if (e.target === document.getElementById('modal-backdrop'))
+    document.getElementById('modal-backdrop').classList.remove('open');
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') document.getElementById('modal-backdrop').classList.remove('open');
+});
+
+/* ══════════════════ CONTROLS ══════════════════ */
+document.getElementById('ca-search').addEventListener('input', e => { query = e.target.value; page = 1; render(); });
+document.getElementById('ca-sort').addEventListener('change', e => { sort = e.target.value; render(); });
+document.querySelectorAll('.pill').forEach(p => p.addEventListener('click', () => {
+  document.querySelectorAll('.pill').forEach(x => x.classList.remove('on'));
+  p.classList.add('on');
+  filter = p.dataset.f;
+  page = 1;
+  render();
+}));
+document.getElementById('random-btn').addEventListener('click', () => {
+  const c = DATA[Math.floor(Math.random() * DATA.length)];
+  openModal(c.l);
+});
+
+/* ══════════════════ CANVAS STARFIELD ══════════════════ */
+(function() {
+  const cv = document.getElementById('starfield-canvas');
+  const ctx = cv.getContext('2d');
+  let W, H, stars = [], shooters = [];
+
+  function resize() {
+    W = cv.width  = window.innerWidth;
+    H = cv.height = window.innerHeight;
+  }
+
+  function initStars() {
+    stars = [];
+    const n = Math.floor(W * H / 2000);
+    for (let i = 0; i < n; i++) {
+      const sz = Math.random();
+      stars.push({
+        x: Math.random() * W,
+        y: Math.random() * H,
+        r: sz < 0.6 ? 0.38 : sz < 0.88 ? 0.72 : 1.1,
+        a: Math.random(),
+        da: 0.004 + Math.random() * 0.012,
+        t: Math.random() * Math.PI * 2,
+        col: Math.random() < 0.07 ? '#ffd966' : Math.random() < 0.08 ? '#c4b5fd' : '#f0e8d8'
+      });
+    }
+  }
+
+  function addShooter() {
+    shooters.push({
+      x: Math.random() * W * 0.75 + W * 0.1,
+      y: Math.random() * H * 0.4,
+      vx: -(3.5 + Math.random() * 4),
+      vy: 2 + Math.random() * 3,
+      len: 70 + Math.random() * 90,
+      life: 1,
+      decay: 0.016 + Math.random() * 0.012
+    });
+  }
+
+  let lastShot = 0;
+  function draw(ts) {
+    ctx.clearRect(0, 0, W, H);
+    for (const s of stars) {
+      s.t += s.da;
+      s.a = 0.3 + Math.sin(s.t) * 0.6;
+      ctx.globalAlpha = Math.max(0, s.a);
+      ctx.fillStyle = s.col;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    if (ts - lastShot > 3000 + Math.random() * 5000) { addShooter(); lastShot = ts; }
+    shooters = shooters.filter(s => s.life > 0);
+    for (const s of shooters) {
+      const tail = ctx.createLinearGradient(s.x, s.y, s.x - s.vx * (s.len / 5), s.y - s.vy * (s.len / 5));
+      tail.addColorStop(0, `rgba(255,230,160,${s.life * 0.9})`);
+      tail.addColorStop(1, 'rgba(255,210,100,0)');
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = tail;
+      ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      ctx.moveTo(s.x, s.y);
+      ctx.lineTo(s.x - s.vx * (s.len / 5), s.y - s.vy * (s.len / 5));
+      ctx.stroke();
+      ctx.globalAlpha = s.life * 0.95;
+      ctx.fillStyle = '#fffbe8';
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, 1.5, 0, Math.PI * 2);
+      ctx.fill();
+      s.x += s.vx;
+      s.y += s.vy;
+      s.life -= s.decay;
+    }
+    ctx.globalAlpha = 1;
+    requestAnimationFrame(draw);
+  }
+
+  resize();
+  initStars();
+  window.addEventListener('resize', () => { resize(); initStars(); });
+  requestAnimationFrame(draw);
+})();
+
+/* ══════════════════ INIT ══════════════════ */
+saveFavs();
+render();
+</script>
+</body>
+</html>
